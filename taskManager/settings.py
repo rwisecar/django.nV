@@ -101,7 +101,7 @@ LOGIN_URL = '/taskManager/login/'
 PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
 
 # A2: Broken Auth and Session Management
-SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+SESSION_ENGINE = "django.contrib.sessions.models.Session"
 
 EMAIL_PORT = 1025
 
