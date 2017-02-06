@@ -38,6 +38,7 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sessions',
     'taskManager'
 )
 
@@ -101,10 +102,12 @@ LOGIN_URL = '/taskManager/login/'
 PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
 
 # A2: Broken Auth and Session Management
-SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
+# SESSION_ENGINE = "django.contrib.sessions.models.Session"
 
 EMAIL_PORT = 1025
 
 # Needs compatibility with older Django!
 SESSION_SERIALIZER = "django.contrib.sessions.serializers.PickleSerializer"
 SESSION_COOKIE_HTTPONLY = False
+
+SECURE_BROWSER_XSS_FILTER = True
