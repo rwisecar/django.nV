@@ -117,32 +117,41 @@ def manage_groups(request):
 
         user_list = User.objects.order_by('date_joined')
 
-        if request.method == 'POST':
+        if user.has_perm('can_change_group'):
 
-            post_data = request.POST.dict()
+            if request.method == 'POST':
 
-            accesslevel = post_data["accesslevel"].strip()
+                post_data = request.POST.dict()
 
-            if accesslevel in ['admin_g', 'project_managers', 'team_member']:
+                accesslevel = post_data["accesslevel"].strip()
 
-                # Create the group if it doesn't already exist
-                try:
-                    grp = Group.objects.get(name=accesslevel)
-                except Group.DoesNotExist:
-                    grp = Group.objects.create(name=accesslevel)
-                specified_user = User.objects.get(pk=post_data["userid"])
-                # Check if the user even exists
-                if specified_user is None:
-                    return redirect('/taskManager/', {'permission': False})
-                specified_user.groups.add(grp)
-                specified_user.save()
-                return render_to_response(
-                    'taskManager/manage_groups.html',
-                    {
-                        'users': user_list,
-                        'groups_changed': True,
-                        'logged_in': True},
-                    RequestContext(request))
+                if accesslevel in ['admin_g', 'project_managers', 'team_member']:
+
+                    # Create the group if it doesn't already exist
+                    try:
+                        grp = Group.objects.get(name=accesslevel)
+                    except Group.DoesNotExist:
+                        grp = Group.objects.create(name=accesslevel)
+                    specified_user = User.objects.get(pk=post_data["userid"])
+                    # Check if the user even exists
+                    if specified_user is None:
+                        return redirect('/taskManager/', {'permission': False})
+                    specified_user.groups.add(grp)
+                    specified_user.save()
+                    return render_to_response(
+                        'taskManager/manage_groups.html',
+                        {
+                            'users': user_list,
+                            'groups_changed': True,
+                            'logged_in': True},
+                        RequestContext(request))
+                else:
+                    return render_to_response(
+                        'taskManager/manage_groups.html',
+                        {
+                            'users': user_list,
+                            'logged_in': True},
+                        RequestContext(request))
             else:
                 return render_to_response(
                     'taskManager/manage_groups.html',
@@ -150,17 +159,8 @@ def manage_groups(request):
                         'users': user_list,
                         'logged_in': True},
                     RequestContext(request))
-
         else:
-            if user.has_perm('can_change_group'):
-                return render_to_response(
-                    'taskManager/manage_groups.html',
-                    {
-                        'users': user_list,
-                        'logged_in': True},
-                    RequestContext(request))
-            else:
-                return redirect('/taskManager/', {'permission': False})
+            return redirect('/taskManager/', {'permission': False})
 
     return redirect('/taskManager/', {'logged_in': False})
 
@@ -711,42 +711,43 @@ def show_tutorial(request, vuln_id):
 
 
 def profile(request):
-    return render(request, 'taskManager/profile.html', {'user': request.user})
+    if request.user.is_authenticated():
+        return render(request, 'taskManager/profile.html', {'user': request.user})
 
 # A4: Insecure Direct Object Reference (IDOR)
 # A8: Cross Site Request Forgery (CSRF)
 
 
-@csrf_exempt
 def profile_by_id(request, user_id):
-    user = User.objects.get(pk=user_id)
+    if request.user.is_authenticated():
+        user = User.objects.get(pk=user_id)
 
-    if request.method == 'POST':
-        form = ProfileForm(request.POST, request.FILES)
-        if form.is_valid():
-            print("made it!")
-            if request.POST.get('username') != user.username:
-                user.username = request.POST.get('username')
-            if request.POST.get('first_name') != user.first_name:
-                user.first_name = request.POST.get('first_name')
-            if request.POST.get('last_name') != user.last_name:
-                user.last_name = request.POST.get('last_name')
-            if request.POST.get('email') != user.email:
-                user.email = request.POST.get('email')
-            if request.POST.get('password'):
-                user.set_password(request.POST.get('password'))
-            if request.FILES:
-                user.userprofile.image = store_uploaded_file(user.username
-                + "." + request.FILES['picture'].name.split(".")[-1], request.FILES['picture'])
-                user.userprofile.save()
-            user.save()
-            messages.info(request, "User Updated")
+        if request.method == 'POST':
+            form = ProfileForm(request.POST, request.FILES)
+            if form.is_valid():
+                print("made it!")
+                if request.POST.get('username') != user.username:
+                    user.username = request.POST.get('username')
+                if request.POST.get('first_name') != user.first_name:
+                    user.first_name = request.POST.get('first_name')
+                if request.POST.get('last_name') != user.last_name:
+                    user.last_name = request.POST.get('last_name')
+                if request.POST.get('email') != user.email:
+                    user.email = request.POST.get('email')
+                if request.POST.get('password'):
+                    user.set_password(request.POST.get('password'))
+                if request.FILES:
+                    user.userprofile.image = store_uploaded_file(user.username
+                    + "." + request.FILES['picture'].name.split(".")[-1], request.FILES['picture'])
+                    user.userprofile.save()
+                user.save()
+                messages.info(request, "User Updated")
 
-    return render(request, 'taskManager/profile.html', {'user': user})
+        return render(request, 'taskManager/profile.html', {'user': user})
 
 # A8: Cross Site Request Forgery (CSRF)
 
-@csrf_exempt
+
 def reset_password(request):
 
     if request.method == 'POST':
@@ -786,7 +787,7 @@ def reset_password(request):
 
 # Vuln: Username Enumeration
 
-@csrf_exempt
+
 def forgot_password(request):
 
     if request.method == 'POST':
@@ -820,7 +821,7 @@ def forgot_password(request):
 
 # A8: Cross Site Request Forgery (CSRF)
 
-@csrf_exempt
+
 def change_password(request):
 
     if request.method == 'POST':
