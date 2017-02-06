@@ -117,32 +117,41 @@ def manage_groups(request):
 
         user_list = User.objects.order_by('date_joined')
 
-        if request.method == 'POST':
+        if user.has_perm('can_change_group'):
 
-            post_data = request.POST.dict()
+            if request.method == 'POST':
 
-            accesslevel = post_data["accesslevel"].strip()
+                post_data = request.POST.dict()
 
-            if accesslevel in ['admin_g', 'project_managers', 'team_member']:
+                accesslevel = post_data["accesslevel"].strip()
 
-                # Create the group if it doesn't already exist
-                try:
-                    grp = Group.objects.get(name=accesslevel)
-                except Group.DoesNotExist:
-                    grp = Group.objects.create(name=accesslevel)
-                specified_user = User.objects.get(pk=post_data["userid"])
-                # Check if the user even exists
-                if specified_user is None:
-                    return redirect('/taskManager/', {'permission': False})
-                specified_user.groups.add(grp)
-                specified_user.save()
-                return render_to_response(
-                    'taskManager/manage_groups.html',
-                    {
-                        'users': user_list,
-                        'groups_changed': True,
-                        'logged_in': True},
-                    RequestContext(request))
+                if accesslevel in ['admin_g', 'project_managers', 'team_member']:
+
+                    # Create the group if it doesn't already exist
+                    try:
+                        grp = Group.objects.get(name=accesslevel)
+                    except Group.DoesNotExist:
+                        grp = Group.objects.create(name=accesslevel)
+                    specified_user = User.objects.get(pk=post_data["userid"])
+                    # Check if the user even exists
+                    if specified_user is None:
+                        return redirect('/taskManager/', {'permission': False})
+                    specified_user.groups.add(grp)
+                    specified_user.save()
+                    return render_to_response(
+                        'taskManager/manage_groups.html',
+                        {
+                            'users': user_list,
+                            'groups_changed': True,
+                            'logged_in': True},
+                        RequestContext(request))
+                else:
+                    return render_to_response(
+                        'taskManager/manage_groups.html',
+                        {
+                            'users': user_list,
+                            'logged_in': True},
+                        RequestContext(request))
             else:
                 return render_to_response(
                     'taskManager/manage_groups.html',
@@ -150,17 +159,8 @@ def manage_groups(request):
                         'users': user_list,
                         'logged_in': True},
                     RequestContext(request))
-
         else:
-            if user.has_perm('can_change_group'):
-                return render_to_response(
-                    'taskManager/manage_groups.html',
-                    {
-                        'users': user_list,
-                        'logged_in': True},
-                    RequestContext(request))
-            else:
-                return redirect('/taskManager/', {'permission': False})
+            return redirect('/taskManager/', {'permission': False})
 
     return redirect('/taskManager/', {'logged_in': False})
 
