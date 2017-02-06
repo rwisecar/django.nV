@@ -711,7 +711,8 @@ def show_tutorial(request, vuln_id):
 
 
 def profile(request):
-    return render(request, 'taskManager/profile.html', {'user': request.user})
+    if request.user.is_authenticated():
+        return render(request, 'taskManager/profile.html', {'user': request.user})
 
 # A4: Insecure Direct Object Reference (IDOR)
 # A8: Cross Site Request Forgery (CSRF)
@@ -719,30 +720,31 @@ def profile(request):
 
 @csrf_exempt
 def profile_by_id(request, user_id):
-    user = User.objects.get(pk=user_id)
+    if request.user.is_authenticated():
+        user = User.objects.get(pk=user_id)
 
-    if request.method == 'POST':
-        form = ProfileForm(request.POST, request.FILES)
-        if form.is_valid():
-            print("made it!")
-            if request.POST.get('username') != user.username:
-                user.username = request.POST.get('username')
-            if request.POST.get('first_name') != user.first_name:
-                user.first_name = request.POST.get('first_name')
-            if request.POST.get('last_name') != user.last_name:
-                user.last_name = request.POST.get('last_name')
-            if request.POST.get('email') != user.email:
-                user.email = request.POST.get('email')
-            if request.POST.get('password'):
-                user.set_password(request.POST.get('password'))
-            if request.FILES:
-                user.userprofile.image = store_uploaded_file(user.username
-                + "." + request.FILES['picture'].name.split(".")[-1], request.FILES['picture'])
-                user.userprofile.save()
-            user.save()
-            messages.info(request, "User Updated")
+        if request.method == 'POST':
+            form = ProfileForm(request.POST, request.FILES)
+            if form.is_valid():
+                print("made it!")
+                if request.POST.get('username') != user.username:
+                    user.username = request.POST.get('username')
+                if request.POST.get('first_name') != user.first_name:
+                    user.first_name = request.POST.get('first_name')
+                if request.POST.get('last_name') != user.last_name:
+                    user.last_name = request.POST.get('last_name')
+                if request.POST.get('email') != user.email:
+                    user.email = request.POST.get('email')
+                if request.POST.get('password'):
+                    user.set_password(request.POST.get('password'))
+                if request.FILES:
+                    user.userprofile.image = store_uploaded_file(user.username
+                    + "." + request.FILES['picture'].name.split(".")[-1], request.FILES['picture'])
+                    user.userprofile.save()
+                user.save()
+                messages.info(request, "User Updated")
 
-    return render(request, 'taskManager/profile.html', {'user': user})
+        return render(request, 'taskManager/profile.html', {'user': user})
 
 # A8: Cross Site Request Forgery (CSRF)
 
